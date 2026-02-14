@@ -19,7 +19,7 @@ const Home: React.FC = () => {
     // --- LÓGICA DE LOGIN ---
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === "admin" && password === "admin123") {
+        if (username === "admin" && password === "admin1234") {
             setIsAuthenticated(true);
             setError("");
         } else {
@@ -59,8 +59,8 @@ const Home: React.FC = () => {
             {/* LOGO SIEMPRE VISIBLE (Un poco más pequeño en login para dar espacio) */}
             <div className={`flex items-center justify-center w-full transition-all duration-500 ${isAuthenticated ? 'flex-1' : 'mb-8'}`}>
                 <img 
-                    src="/amadeus_schweppeslogo.png" 
-                    alt="amadeus schweppes logo" 
+                    src="/logoik.png" 
+                    alt="" 
                     className={`h-auto transition-all duration-500 ${isAuthenticated ? 'w-48 sm:w-64' : 'w-32 sm:w-40'}`} 
                 />
             </div>
