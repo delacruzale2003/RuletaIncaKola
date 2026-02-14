@@ -53,6 +53,7 @@ const ExitPage: React.FC = () => {
                             alt={prizeName}
                             className="w-69 h-auto object-contain mx-auto relative z-10 drop-shadow-2xl hover:scale-110 transition-transform duration-500 ease-out"
                         />
+                        <p className="text-[#1c3f8c] text-md mt-6 font-arponaBold">*Imagen referencial</p>
                     </div>
                 ) : (
                     <div className="h-32 flex items-center justify-center text-white/50 italic mb-4">
