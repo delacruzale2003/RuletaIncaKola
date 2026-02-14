@@ -1,0 +1,184 @@
+/* 1. Imports base */
+@import url("https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* =======================================
+   2. TUS FUENTES LOCALES (Conservadas)
+   ======================================= */
+@font-face { font-family: 'Montserrat'; src: url('./assets/Montserrat-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('./assets/Montserrat-Medium.ttf') format('truetype'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('./assets/Montserrat-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('./assets/Montserrat-ExtraBold.ttf') format('truetype'); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'CreativeLand'; src: url('./assets/My Creative Land - Rockeby Condensed Black.otf') format('opentype'); font-weight: 100; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Amigos'; src: url('./assets/Amigos.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'BetterWith-Narrow'; src: url('./assets/BetterWith-Narrow.ttf') format('truetype'); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Markpro'; src: url('./assets/MarkPro.ttf') format('truetype'); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Teko'; src: url('./assets/Teko-VariableFont_wght.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face{font-family:'Arpona Bold';src:url('./assets/Arpona-Bold.otf') format('opentype');font-weight:700;font-style:normal;font-display:swap;}
+/* =======================================
+   3. CONFIGURACIÓN DEL TEMA (Del proyecto bonito)
+   ======================================= */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* Colores modernos */
+  --color-primary: #030412;
+  --color-midnight: #06091f;
+  --color-navy: #161a31;
+  --color-indigo: #1f1e39;
+  --color-storm: #282b4b;
+  --color-aqua: #33c2cc;
+  --color-mint: #57db96;
+  --color-royal: #5c33cc;
+  --color-lavender: #7a57db;
+  --color-fuchsia: #ca2f8c;
+  --color-orange: #cc6033;
+  --color-sand: #d6995c;
+  --color-coral: #ea4884;
+
+  /* Animaciones del proyecto bonito */
+  --animate-orbit: orbit 50s linear infinite;
+  --animate-marquee: marquee 50s linear infinite;
+  --animate-marquee-vertical: marquee-vertical 50s linear infinite;
+
+  @keyframes orbit {
+    0% { transform: rotate(calc(var(--angle) * 1deg)) translateY(calc(var(--radius) * 1px)) rotate(calc(var(--angle) * -1deg)); }
+    100% { transform: rotate(calc(var(--angle) * 1deg + 360deg)) translateY(calc(var(--radius) * 1px)) rotate(calc((var(--angle) * -1deg) - 360deg)); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100% - var(--gap))); }
+  }
+  @keyframes marquee-vertical {
+    from { transform: translateY(0); }
+    to { transform: translateY(calc(-100% - var(--gap))); }
+  }
+}
+
+/* =======================================
+   4. ESTILOS BASE (Fondo Negro y Scroll)
+   ======================================= */
+body {
+  background: #000000; /* Fondo negro puro */
+  font-family: 'Montserrat', "Funnel Display", sans-serif; /* Prioriza tu fuente, usa la bonita de fallback */
+  color: white;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+}
+
+/* =======================================
+   5. CLASES DE UTILIDAD (Fusión de ambos)
+   ======================================= */
+
+/* Tus clases de fuentes */
+.font-mont-regular { font-family: 'Montserrat', sans-serif; font-weight: 400; }
+.font-mont-medium { font-family: 'Montserrat', sans-serif; font-weight: 500; }
+.font-mont-bold { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+.font-mont-extrabold { font-family: 'Montserrat', sans-serif; font-weight: 800; }
+.font-betterwith { font-family: 'BetterWith-Narrow', sans-serif; font-weight: 400; }
+.font-markpro { font-family: 'Markpro', sans-serif; font-weight: 400; }
+.font-teko { font-family: 'Teko', sans-serif; font-weight: 800; }
+.font-amigos { font-family: 'Amigos', sans-serif; font-weight: 400; }
+.font-creativeLand { font-family: 'CreativeLand', sans-serif; font-weight: 100; }
+.font-arponaBold { font-family: 'Arpona Bold', sans-serif; font-weight: 700; }
+/* Clases UI del proyecto bonito (Glassmorphism, inputs, etc) */
+.c-space { @apply sm:px-10 px-5 lg:px-15; }
+.section-spacing { @apply min-h-screen mt-20 md:mt-30; }
+.text-heading { @apply font-bold text-3xl md:text-4xl; }
+.field-label { @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70; }
+
+/* Input estilo cristal */
+.field-input {
+  @apply w-full min-h-10 rounded-md px-3 py-2 text-sm bg-white/10 transition duration-200 placeholder-neutral-500 border border-white/10 mt-2 text-white;
+}
+.field-input-focus { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20; }
+
+/* =======================================
+   6. VARIABLES SHADCN (Colores sistema)
+   ======================================= */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0); /* Ojo: Si quieres modo oscuro por defecto, ajusta esto o usa la clase .dark en html */
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
+/* =======================================
+   7. ANIMACIÓN FLOTANTE (Tuya original)
+   ======================================= */
+@keyframes float-vertical {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0); }
+}
+
+.float-animation-slow {
+  animation: float-vertical 6s ease-in-out infinite;
+}
