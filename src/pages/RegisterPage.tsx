@@ -11,13 +11,17 @@ const RegisterPage: React.FC = () => {
     const [searchParams] = useSearchParams();
     
     // Estados de UI
-    const [showRegisterModal, setShowRegisterModal] = useState(true);
-    const [showTermsModal, setShowTermsModal] = useState(false);
-    const [showGif, setShowGif] = useState(false);
-    const [isRegistered, setIsRegistered] = useState(false);
-    
-    // Estados del formulario (Solo conservamos el checkbox local porque no va al backend)
-    const [termsAccepted, setTermsAccepted] = useState(false);
+    // El registro empieza OCULTO
+const [showRegisterModal, setShowRegisterModal] = useState(false); 
+
+// Los términos empiezan VISIBLES
+const [showTermsModal, setShowTermsModal] = useState(true); 
+
+const [showGif, setShowGif] = useState(false);
+const [isRegistered, setIsRegistered] = useState(false);
+
+// El check ya empieza MARCADO (porque se asume que leerá el modal que sale primero)
+const [termsAccepted, setTermsAccepted] = useState(true);
 
     // ELIMINADOS LOS ESTADOS LOCALES DE PHONE Y VOUCHER PARA USAR LOS DEL HOOK
     // const [phone, setPhone] = useState(''); 
@@ -103,8 +107,8 @@ const RegisterPage: React.FC = () => {
         <div className={`relative z-10 w-76 h-76 sm:w-96 sm:h-96 flex items-center justify-center transition-opacity duration-500 ${!isRegistered ? 'opacity-50 blur-sm' : 'opacity-100'}`}>
     
     {/* === FLECHA (Ahora abajo y volteada) === */}
-    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 rotate-180 z-30 pointer-events-none">
-        <img src="/downarrow.png" alt="Flecha Ganadora" className="w-16 h-16 object-contain drop-shadow-2xl"/>
+    <div className="absolute -bottom-11 left-1/2 transform -translate-x-1/2  z-30 pointer-events-none">
+        <img src="/arrow.png" alt="Flecha Ganadora" className="w-11 h-11 object-contain drop-shadow-2xl"/>
     </div>
 
     {/* === RULETA (Con el nuevo GIF) === */}
@@ -118,7 +122,7 @@ const RegisterPage: React.FC = () => {
 </div>
 
 {/* === NAVBAR INFERIOR === */}
-<div className="z-20 mt-8 flex flex-col items-center gap-3 relative">
+<div className="z-20 mt-10 flex flex-col items-center gap-2 relative">
     <div className="flex items-center gap-1">
         <button 
             onClick={onSpinClick} 
@@ -131,7 +135,7 @@ const RegisterPage: React.FC = () => {
                 }
             `}
         >
-            <span className="text-xl tracking-tight font-markpro text-white uppercase border-2 border-black px-5 rounded-full py-1 bg-black">
+            <span className="text-xl tracking-tight font-arponaBold text-white uppercase border-2 border-transparent px-7 rounded-full py-1 bg-[#1C3F8C] ">
                 {isRegistered ? "Juega Aquí" : "Regístrate"}
             </span>
         </button>
@@ -295,7 +299,10 @@ const RegisterPage: React.FC = () => {
                 <div className="bg-transparent border-2 border-black rounded-3xl p-4
                 px-5 max-w-md w-full relative shadow-[0_0_30px_rgba(162,231,26,0.2)] z-10">
                     <button 
-                        onClick={() => setShowTermsModal(false)}
+                        onClick={() => {
+                            setShowTermsModal(false);    // Cierra términos
+                            setShowRegisterModal(true);
+                        }}
                         className="absolute top-4 right-4 text-black hover:scale-110 transition-transform"
                     >
                         <X size={24} strokeWidth={3} />
