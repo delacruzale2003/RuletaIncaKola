@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"; 
 import { useRegistration } from "../hooks/useRegistration";
-import { Settings, MapPin, Check, X } from 'lucide-react';
+import {  MapPin, Check, X } from 'lucide-react';
 // IMPORTANTE: Asegúrate de que la ruta sea correcta según tu estructura de carpetas
 import BackgroundCC from "../components/BackgroundCC";
 
@@ -35,13 +35,13 @@ const RegisterPage: React.FC = () => {
         voucher, setVoucher   // <--- AÑADIDO: Traemos el estado del hook
     } = useRegistration();
 
-    const goToStores = () => {
-        if (activeStoreId) {
-            navigate(`/tiendas?store=${activeStoreId}`);
-        } else {
-            navigate('/tiendas');
-        }
-    };
+    // const goToStores = () => {
+    //     if (activeStoreId) {
+    //         navigate(`/tiendas?store=${activeStoreId}`);
+    //     } else {
+    //         navigate('/tiendas');
+    //     }
+    // };
 
     const handleRegisterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
