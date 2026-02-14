@@ -289,29 +289,38 @@ const [termsAccepted, setTermsAccepted] = useState(true);
 
         {/* --- MODAL DE TÉRMINOS CON BORDE NEÓN --- */}
         {showTermsModal && (
-            <div className="fixed inset-0 z-[60] p-2 animate-fade-in flex items-center justify-center">
+            // 1. Agregamos 'flex-col' aquí para que la imagen quede arriba del cuadro
+            <div className="fixed inset-0 z-[60] p-2 animate-fade-in flex flex-col items-center justify-center">
                 
-                {/* 3. FONDO DEL MODAL TÉRMINOS */}
+                {/* FONDO DEL MODAL TÉRMINOS */}
                 <div className="absolute inset-0 z-0">
                     <BackgroundCC />
                 </div>
 
-                <div className="bg-transparent border-2 border-black rounded-3xl p-4
+                {/* --- NUEVA IMAGEN AQUÍ --- */}
+                {/* z-10 para que esté sobre el fondo, mb-4 para dar espacio antes del cuadro */}
+                <img 
+                    src="/logoik.png" 
+                    alt="Logo" 
+                    className="w-30 h-auto mb-10 z-10 relative drop-shadow-lg"
+                />
+
+                <div className="bg-transparent border-2 border-[#1C3F8C] rounded-3xl p-4
                 px-5 max-w-md w-full relative shadow-[0_0_30px_rgba(162,231,26,0.2)] z-10">
                     <button 
                         onClick={() => {
                             setShowTermsModal(false);    // Cierra términos
                             setShowRegisterModal(true);
                         }}
-                        className="absolute top-4 right-4 text-black hover:scale-110 transition-transform"
+                        className="absolute top-4 right-4 text-[#1C3F8C] hover:scale-110 transition-transform border-2 border-[#1C3F8C] rounded-full "
                     >
                         <X size={24} strokeWidth={3} />
                     </button>
                     
                     <br />
                     
-                    <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                        <p className="text-black text-xs leading-3.5 font-markpro text-justify font-light">
+                    <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar py-3">
+                        <p className="text-[#1C3F8C] text-xs leading-3.5 font-markpro text-justify font-light">
                             <strong>Promoción válida a nivel nacional del 16 de febrero al 24 de abril de 2026</strong> , o hasta agotar stock de premios, lo que ocurra primero. Mecánica:  Participan personas naturales mayores de 18 años, con residencia legal y domicilio en el territorio nacional del Perú, que realice la compra según el canal en el que se encuentre : 
                             <br />
                             AASS (Autoservicios), Por la compra de S/ 15 en Inca Kola, CSTORES (Tiendas de conveniencia), Por la compra de 2 Inca Kolas,QSR(Quick Service Restaurants) Por la compra de combos con Inca Kola, CINES ,Por la compra de tu combo con Inca Kola, podrás participar del juego y ganar premios al instante. 
