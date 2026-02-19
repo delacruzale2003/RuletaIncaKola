@@ -38,7 +38,26 @@ export const useRegistration = (): RouletteHook => {
 
     const { storeId } = useParams<RouteParams>();
 
-    // ... (useEffect de fetchStoreInfo se mantiene igual)
+    // === EL USEEFFECT FALTANTE RESTAURADO AQUÍ ===
+    useEffect(() => {
+        const fetchStoreInfo = async () => {
+            if (!storeId) return;
+            try {
+                const res = await fetch(`${API_URL}/api/v1/admin/stores/${storeId}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.success && json.data) {
+                        setStoreName(json.data.name);
+                    }
+                }
+            } catch (error) {
+                console.error("Error al obtener información de la tienda:", error);
+            }
+        };
+        
+        fetchStoreInfo();
+    }, [storeId]);
+    // ===============================================
 
     const handleSpin = async (): Promise<SpinResult> => {
         setMessage("");
