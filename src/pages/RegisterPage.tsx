@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"; 
 import { useRegistration } from "../hooks/useRegistration";
-import {  MapPin, Check, X } from 'lucide-react';
+import { MapPin, Check, X } from 'lucide-react';
 // IMPORTANTE: Asegúrate de que la ruta sea correcta según tu estructura de carpetas
 import BackgroundCC from "../components/BackgroundCC";
 
@@ -11,21 +11,16 @@ const RegisterPage: React.FC = () => {
     const [searchParams] = useSearchParams();
     
     // Estados de UI
-    // El registro empieza OCULTO
-const [showRegisterModal, setShowRegisterModal] = useState(false); 
+    const [showRegisterModal, setShowRegisterModal] = useState(false); 
+    const [showTermsModal, setShowTermsModal] = useState(true); 
+    const [showGif, setShowGif] = useState(false);
+    const [isRegistered, setIsRegistered] = useState(false);
 
-// Los términos empiezan VISIBLES
-const [showTermsModal, setShowTermsModal] = useState(true); 
+    // NUEVO ESTADO: Contador
+    const [countdown, setCountdown] = useState<number | null>(null);
 
-const [showGif, setShowGif] = useState(false);
-const [isRegistered, setIsRegistered] = useState(false);
-
-// El check ya empieza MARCADO (porque se asume que leerá el modal que sale primero)
-const [termsAccepted, setTermsAccepted] = useState(true);
-
-    // ELIMINADOS LOS ESTADOS LOCALES DE PHONE Y VOUCHER PARA USAR LOS DEL HOOK
-    // const [phone, setPhone] = useState(''); 
-    // const [voucher, setVoucher] = useState<File | null>(null);
+    // El check ya empieza MARCADO
+    const [termsAccepted, setTermsAccepted] = useState(true);
 
     const activeStoreId = paramStoreId || searchParams.get("store");
 
@@ -35,50 +30,74 @@ const [termsAccepted, setTermsAccepted] = useState(true);
         handleSpin, 
         storeName,
         name, setName,
-        phone, setPhone,      // <--- AÑADIDO: Traemos el estado del hook
-        voucher, setVoucher   // <--- AÑADIDO: Traemos el estado del hook
+        phone, setPhone,  
+        dni, setDni,    // <--- AÑADIDO: Traemos el estado del hook
+        voucher, setVoucher 
     } = useRegistration();
-
-    // const goToStores = () => {
-    //     if (activeStoreId) {
-    //         navigate(`/tiendas?store=${activeStoreId}`);
-    //     } else {
-    //         navigate('/tiendas');
-    //     }
-    // };
 
     const handleRegisterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 1. Validaciones básicas
-        if (!name || !phone || !voucher || !termsAccepted) {
+        // 1. Validaciones básicas de existencia
+        if (!name || !phone || !voucher || !dni || !termsAccepted) {
             alert("Por favor completa todos los campos y acepta los términos.");
             return;
         }
 
-        // 2. Validar longitud de Teléfono
-        if (phone.length < 9) {
-            alert("El teléfono debe tener al menos 9 dígitos");
+        // 2. Validar longitud de DNI (9 dígitos exactos)
+        if (dni.length !== 9) {
+            alert("Formato de dni invalido.");
             return;
         }
 
-        //console.log("Datos de registro:", { name, phone, voucher });
+        // 3. Validar longitud de Teléfono (9 dígitos exactos)
+        if (phone.length < 9) {
+            alert("El teléfono debe tener 9 dígitos.");
+            return;
+        }
 
         setShowRegisterModal(false);
         setIsRegistered(true);
     };
 
+    // Helper para pausar la ejecución
+    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     const onSpinClick = async () => {
-        if (showGif || loading || !activeStoreId || !isRegistered) {
+        if (showGif || loading || !activeStoreId || !isRegistered || countdown !== null) {
             if (!isRegistered && !loading && !showGif) setShowRegisterModal(true);
             return;
         }
 
-        const result = await handleSpin();
+        // --- MAGIA UX: Iniciamos el GIF y el contador INMEDIATAMENTE ---
+        setShowGif(true);
+        setCountdown(5);
 
-        if (result.success && result.prizeName) {
-            setShowGif(true);
-            setTimeout(() => {
+        let currentCount = 5;
+        const timer = setInterval(() => {
+            currentCount -= 1;
+            if (currentCount > 0) {
+                setCountdown(currentCount);
+            } else if (currentCount === 0) {
+                setCountdown(0);
+            }
+        }, 1000);
+
+        try {
+            // Ejecutamos la subida de imagen y el sorteo en segundo plano
+            const result = await handleSpin();
+
+            if (result.success && result.prizeName) {
+                // Esperamos a que el contador visual termine (si el server respondió muy rápido)
+                if (currentCount > 0) {
+                    await wait(currentCount * 1000);
+                } else {
+                    // Si se demoró más de 5 segundos, le damos 1 segundo de gracia
+                    await wait(1000); 
+                }
+                
+                clearInterval(timer); // AHORA SÍ detenemos el reloj
+                
                 navigate('/exit', {
                     state: { 
                         prizeName: result.prizeName, 
@@ -87,12 +106,19 @@ const [termsAccepted, setTermsAccepted] = useState(true);
                         storeId: activeStoreId 
                     },
                 });
-            }, 4000); 
-        } 
+            } else {
+                // Si hubo un error (ej: sin stock)
+                clearInterval(timer);
+                setShowGif(false);
+                setCountdown(null);
+            }
+        } catch (error) {
+            clearInterval(timer);
+            setShowGif(false);
+            setCountdown(null);
+        }
     };
 
-   
-    
     return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative font-sans">
         
@@ -101,63 +127,67 @@ const [termsAccepted, setTermsAccepted] = useState(true);
             <BackgroundCC />
         </div>
 
+        {/* --- PRE-CARGA DEL GIF PARA EVITAR PARPADEOS --- */}
+        <link rel="preload" as="image" href="/ruletaik.gif" />
+
         <img src="/logoik.png" alt="logo" className="w-31 h-auto mb-6 z-10 drop-shadow-md relative" />
 
         {/* === CONTENEDOR DE LA RULETA === */}
         <div className={`relative z-10 w-76 h-76 sm:w-96 sm:h-96 flex items-center justify-center transition-opacity duration-500 ${!isRegistered ? 'opacity-50 blur-sm' : 'opacity-100'}`}>
-    
-    {/* === FLECHA (Ahora abajo y volteada) === */}
-    <div className="absolute -bottom-11 left-1/2 transform -translate-x-1/2  z-30 pointer-events-none">
-        <img src="/arrow.png" alt="Flecha Ganadora" className="w-11 h-11 object-contain drop-shadow-2xl"/>
-    </div>
+            
+            {/* === FLECHA === */}
+            <div className="absolute -bottom-11 left-1/2 transform -translate-x-1/2  z-30 pointer-events-none">
+                <img src="/arrow.png" alt="Flecha Ganadora" className="w-11 h-11 object-contain drop-shadow-2xl"/>
+            </div>
 
-    {/* === RULETA (Con el nuevo GIF) === */}
-    <img 
-        src={showGif ? "/ruletaik.gif" : "/ruletaik.png"} 
-        alt="Ruleta" 
-        className="w-full h-full object-contain drop-shadow-2xl"
-    />
-
-    {/* Se eliminó el botón central (GO) que estaba aquí */}
-</div>
-
-{/* === NAVBAR INFERIOR === */}
-<div className="z-20 mt-10 flex flex-col items-center gap-2 relative">
-    <div className="flex items-center gap-1">
-        <button 
-            onClick={onSpinClick} 
-            disabled={showGif || loading || !activeStoreId || !isRegistered}
-            className={`
-                flex items-center px-8 py-2 rounded-full text-black transform transition-all border-2 border-transparent
-                ${showGif || loading || !activeStoreId || !isRegistered
-                    ? 'grayscale opacity-70 cursor-not-allowed' 
-                    : 'hover:brightness-110 active:scale-95' 
-                }
-            `}
-        >
-            <span className="text-xl tracking-tight font-arponaBold text-white uppercase border-2 border-transparent px-7 rounded-full py-1 bg-[#1C3F8C] ">
-                {isRegistered ? "Juega Aquí" : "Regístrate"}
-            </span>
-        </button>
-
-        {/* Se eliminó el botón de Settings que estaba aquí */}
-    </div>
-
-    {activeStoreId && (
-        <div className="flex items-center gap-1 text-black/80 mt-1 animate-fade-in">
-            <MapPin size={12} className="text-black" />
-            <span className="text-xs font-medium tracking-wide uppercase">
-                {storeName || `Tienda: ${activeStoreId}`}
-            </span>
+            {/* === RULETA (Con el nuevo GIF) === */}
+            <img 
+                src={showGif ? "/ruletaik.gif" : "/ruletaik.png"} 
+                alt="Ruleta" 
+                className="w-full h-full object-contain drop-shadow-2xl"
+            />
         </div>
-    )}
-</div>
 
-{message && (
-    <div className="mt-4 z-20 bg-black/90 text-red-600 px-4 py-2 rounded-lg font-bold shadow-lg text-center mx-4 max-w-xs text-sm relative">
-        {message}
-    </div>
-)}
+        {/* === NAVBAR INFERIOR === */}
+        <div className="z-20 mt-10 flex flex-col items-center gap-2 relative">
+            <div className="flex items-center gap-1">
+                <button 
+                    onClick={onSpinClick} 
+                    disabled={showGif || loading || !activeStoreId || !isRegistered || countdown !== null}
+                    className={`
+                        flex items-center px-8 py-2 rounded-full text-black transform transition-all border-2 border-transparent min-w-[200px] justify-center
+                        ${showGif || loading || !activeStoreId || !isRegistered || countdown !== null
+                            ? 'grayscale opacity-70 cursor-not-allowed' 
+                            : 'hover:brightness-110 active:scale-95' 
+                        }
+                    `}
+                >
+                    <span className="text-xl tracking-tight font-arponaBold text-white uppercase border-2 border-transparent px-7 rounded-full py-1 bg-[#1C3F8C] whitespace-nowrap">
+                        {!isRegistered 
+                            ? "Regístrate" 
+                            : countdown !== null 
+                                ? (countdown > 0 ? countdown : "Procesando...") 
+                                : "Juega Aquí"
+                        }
+                    </span>
+                </button>
+            </div>
+
+            {activeStoreId && (
+                <div className="flex items-center gap-1 text-black/80 mt-1 animate-fade-in">
+                    <MapPin size={12} className="text-black" />
+                    <span className="text-xs font-medium tracking-wide uppercase">
+                        {storeName || `Tienda: ${activeStoreId}`}
+                    </span>
+                </div>
+            )}
+        </div>
+
+        {message && (
+            <div className="mt-4 z-20 bg-black/90 text-red-600 px-4 py-2 rounded-lg font-bold shadow-lg text-center mx-4 max-w-xs text-sm relative">
+                {message}
+            </div>
+        )}
         
         {/* ======================================= */}
         {/* 2. MODAL DE REGISTRO (FORMULARIO)       */}
@@ -170,13 +200,10 @@ const [termsAccepted, setTermsAccepted] = useState(true);
                     <BackgroundCC />
                 </div>
                 
-                {/* Contenedor Flex para alinear caja y botón fuera */}
+                {/* Contenedor Flex */}
                 <div className="flex flex-col items-center justify-center w-full mt-20 mb-10 relative z-10">
                     
-                   <div 
-    className="bg-transparent border-2 border-[#1C3F8C] font-arponaBold rounded-3xl p-4 w-auto shadow-2xl relative"
-    
->
+                    <div className="bg-transparent border-2 border-[#1C3F8C] font-arponaBold rounded-3xl p-4 w-auto shadow-2xl relative">
                         
                         {/* --- LOGO --- */}
                         <div className="absolute -top-42 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center">
@@ -193,19 +220,32 @@ const [termsAccepted, setTermsAccepted] = useState(true);
                             <p className="text-[#1C3F8C] text-[15px] text-left  mb-3 leading-3 font-arponaBold">Llena tus datos y participa por<br/> fabulosos premios</p>
                         </div>
 
-                        {/* FORMULARIO CON ID */}
+                        {/* FORMULARIO */}
                         <form id="register-form" onSubmit={handleRegisterSubmit} className="space-y-2 text-start">
-                            
+    
                             {/* Input Nombre */}
                             <div>
                                 <label className="block text-[#1C3F8C] text-[13px] font-bold mb-0 ">Nombres y apellidos</label>
                                 <input 
                                     type="text" 
-                                    placeholder=""
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
-                                    className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2  rounded-full text-[#1C3F8C] text-sm placeholder-gray-500 transition-all focus:outline-none"
+                                    className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2 rounded-full text-[#1C3F8C] text-sm focus:outline-none"
+                                />
+                            </div>
+
+                            {/* Input DNI (VALIDADO Y AÑADIDO) */}
+                            <div>
+                                <label className="block text-[#1C3F8C] text-[13px] font-bold mb-0 ">DNI</label>
+                                <input 
+                                    type="text" 
+                                    inputMode="numeric"
+                                    value={dni}
+                                    onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))} // Solo números
+                                    maxLength={9}
+                                    required
+                                    className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2 rounded-full text-[#1C3F8C] text-sm focus:outline-none"
                                 />
                             </div>
 
@@ -214,19 +254,18 @@ const [termsAccepted, setTermsAccepted] = useState(true);
                                 <label className="block text-[#1C3F8C] text-[13px] font-bold mb-0 ">Teléfono</label>
                                 <input 
                                     type="tel" 
-                                    placeholder=""
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
+                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Solo números
                                     maxLength={9}
                                     required
-                                    className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2  rounded-full text-[#1C3F8C] text-sm placeholder-gray-500 focus:outline-none transition-all"
+                                    className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2 rounded-full text-[#1C3F8C] text-sm focus:outline-none"
                                 />
                             </div>
 
                             {/* Input Foto Voucher */}
                             <div>
                                 <label className="block text-[#1C3F8C] text-[13px] font-bold mb-0 ">Foto de Voucher</label>
-                                <label className="cursor-pointer border-[#1C3F8C] bg-white flex items-center justify-left gap-2 w-76 px-3 py-1 border-2  rounded-full text-[#1C3F8C] text-sm font-arponaBold hover:bg-[#1C3F8C] hover:text-white transition-all shadow-[0_0_10px_rgba(162,231,26,0.3)] active:scale-95">
+                                <label className="cursor-pointer border-[#1C3F8C] bg-white flex items-center justify-left gap-2 w-76 px-3 py-1 border-2 rounded-full text-[#1C3F8C] text-sm font-arponaBold hover:bg-[#1C3F8C] hover:text-white transition-all shadow-[0_0_10px_rgba(162,231,26,0.3)] active:scale-95">
                                     
                                     {voucher ? "ARCHIVO SELECCIONADO" : "SELECCIONAR ARCHIVO"}
                                     <input 
@@ -267,7 +306,7 @@ const [termsAccepted, setTermsAccepted] = useState(true);
                         </form>
                     </div>
 
-                    {/* BOTÓN FUERA DE LA CAJA (Vinculado al form por ID) */}
+                    {/* BOTÓN FUERA DE LA CAJA */}
                     <button
                         type="submit"
                         form="register-form"
@@ -278,7 +317,6 @@ const [termsAccepted, setTermsAccepted] = useState(true);
                                 : 'opacity-40 cursor-not-allowed grayscale'
                             }
                         `}
-                        
                     >
                         ENVIAR
                     </button>
@@ -287,18 +325,14 @@ const [termsAccepted, setTermsAccepted] = useState(true);
             </div>
         )}
 
-        {/* --- MODAL DE TÉRMINOS CON BORDE NEÓN --- */}
+        {/* --- MODAL DE TÉRMINOS --- */}
         {showTermsModal && (
-            // 1. Agregamos 'flex-col' aquí para que la imagen quede arriba del cuadro
             <div className="fixed inset-0 z-[60] p-2 animate-fade-in flex flex-col items-center justify-center">
                 
-                {/* FONDO DEL MODAL TÉRMINOS */}
                 <div className="absolute inset-0 z-0">
                     <BackgroundCC />
                 </div>
 
-                {/* --- NUEVA IMAGEN AQUÍ --- */}
-                {/* z-10 para que esté sobre el fondo, mb-4 para dar espacio antes del cuadro */}
                 <img 
                     src="/logoik.png" 
                     alt="Logo" 
@@ -309,7 +343,7 @@ const [termsAccepted, setTermsAccepted] = useState(true);
                 px-5 max-w-md w-full relative shadow-[0_0_30px_rgba(162,231,26,0.2)] z-10">
                     <button 
                         onClick={() => {
-                            setShowTermsModal(false);    // Cierra términos
+                            setShowTermsModal(false); 
                             setShowRegisterModal(true);
                         }}
                         className="absolute top-4 right-4 text-[#1C3F8C] hover:scale-110 transition-transform border-2 border-[#1C3F8C] rounded-full "
@@ -337,7 +371,7 @@ const [termsAccepted, setTermsAccepted] = useState(true);
             </div>
         )}
     </div>
-);
+    );
 };
 
 export default RegisterPage;
