@@ -159,26 +159,23 @@ const RegisterPage: React.FC = () => {
         {/* === NAVBAR INFERIOR === */}
         <div className="z-20 mt-10 flex flex-col items-center gap-2 relative">
             <div className="flex items-center gap-1">
-                <button 
-                    onClick={onSpinClick} 
-                    disabled={showGif || loading || !activeStoreId || !isRegistered || countdown !== null}
-                    className={`
-                        flex items-center px-8 py-2 rounded-full text-black transform transition-all border-2 border-transparent min-w-[200px] justify-center
-                        ${showGif || loading || !activeStoreId || !isRegistered || countdown !== null
-                            ? 'grayscale opacity-70 cursor-not-allowed' 
-                            : 'hover:brightness-110 active:scale-95' 
-                        }
-                    `}
-                >
-                    <span className="text-xl tracking-tight font-arponaBold text-white uppercase border-2 border-transparent px-7 rounded-full py-1 bg-[#1C3F8C] whitespace-nowrap">
-                        {!isRegistered 
-                            ? "Regístrate" 
-                            : countdown !== null 
-                                ? (countdown > 0 ? countdown : "Procesando...") 
-                                : "Juega Aquí"
-                        }
-                    </span>
-                </button>
+                
+<button 
+    onClick={onSpinClick} 
+    // Añadimos 'loading' a las condiciones de disabled
+    disabled={showGif || loading || !isRegistered || countdown !== null}
+    className={`
+        flex items-center px-8 py-2 rounded-full text-black transform transition-all border-2 border-transparent min-w-[200px] justify-center
+        ${(showGif || loading || countdown !== null) 
+            ? 'grayscale opacity-50 cursor-wait scale-95' // Cambio visual claro de "bloqueado"
+            : 'hover:brightness-110 active:scale-95' 
+        }
+    `}
+>
+    <span className="text-xl tracking-tight font-arponaBold text-white uppercase border-2 border-transparent px-7 rounded-full py-1 bg-[#1C3F8C] whitespace-nowrap">
+        {loading ? "Verificando..." : (countdown !== null ? (countdown > 0 ? countdown : "Suerte...") : "Juega Aquí")}
+    </span>
+</button>
             </div>
 
             {activeStoreId && (
