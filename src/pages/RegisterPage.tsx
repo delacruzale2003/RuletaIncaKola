@@ -45,8 +45,12 @@ const RegisterPage: React.FC = () => {
         }
 
         // 2. Validar longitud de DNI (9 dígitos exactos)
-        if (dni.length !== 9) {
-            alert("Formato de dni invalido.");
+
+
+        // 2. Validar formato de DNI (8 o 9 dígitos numéricos)
+        const dniRegex = /^\d{8,9}$/;
+        if (!dniRegex.test(dni)) {
+            alert("Formato de DNI inválido (debe tener 8 o 9 dígitos).");
             return;
         }
 
@@ -64,60 +68,64 @@ const RegisterPage: React.FC = () => {
     const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const onSpinClick = async () => {
-        if (showGif || loading || !activeStoreId || !isRegistered || countdown !== null) {
-            if (!isRegistered && !loading && !showGif) setShowRegisterModal(true);
-            return;
+    // 1. Bloqueo inmediato: Si ya está cargando, o el GIF está activo, o no está registrado, salimos.
+    if (loading || showGif || countdown !== null || !isRegistered || !activeStoreId) {
+        if (!isRegistered && !loading && !showGif) setShowRegisterModal(true);
+        return;
+    }
+
+    // --- MAGIA UX: Iniciamos el GIF y el contador INMEDIATAMENTE ---
+    setShowGif(true);
+    setCountdown(5);
+
+    let currentCount = 5;
+    const timer = setInterval(() => {
+        currentCount -= 1;
+        if (currentCount > 0) {
+            setCountdown(currentCount);
+        } else {
+            setCountdown(0);
         }
+    }, 1000);
 
-        // --- MAGIA UX: Iniciamos el GIF y el contador INMEDIATAMENTE ---
-        setShowGif(true);
-        setCountdown(5);
+    try {
+        const result = await handleSpin();
 
-        let currentCount = 5;
-        const timer = setInterval(() => {
-            currentCount -= 1;
+        if (result.success && result.prizeName) {
+            // Esperar a que el contador visual termine
             if (currentCount > 0) {
-                setCountdown(currentCount);
-            } else if (currentCount === 0) {
-                setCountdown(0);
-            }
-        }, 1000);
-
-        try {
-            // Ejecutamos la subida de imagen y el sorteo en segundo plano
-            const result = await handleSpin();
-
-            if (result.success && result.prizeName) {
-                // Esperamos a que el contador visual termine (si el server respondió muy rápido)
-                if (currentCount > 0) {
-                    await wait(currentCount * 1000);
-                } else {
-                    // Si se demoró más de 5 segundos, le damos 1 segundo de gracia
-                    await wait(1000); 
-                }
-                
-                clearInterval(timer); // AHORA SÍ detenemos el reloj
-                
-                navigate('/exit', {
-                    state: { 
-                        prizeName: result.prizeName, 
-                        registerId: result.registerId,
-                        isAnonymous: false,
-                        storeId: activeStoreId 
-                    },
-                });
+                await wait(currentCount * 1000);
             } else {
-                // Si hubo un error (ej: sin stock)
-                clearInterval(timer);
-                setShowGif(false);
-                setCountdown(null);
+                await wait(1000); 
             }
-        } catch (error) {
+            
+            clearInterval(timer);
+            
+            navigate('/exit', {
+                state: { 
+                    prizeName: result.prizeName, 
+                    registerId: result.registerId,
+                    isAnonymous: false,
+                    storeId: activeStoreId 
+                },
+            });
+        } else {
+            // AQUÍ MANEJAMOS EL ERROR (DNI duplicado, sin stock, etc.)
             clearInterval(timer);
             setShowGif(false);
             setCountdown(null);
+            // El mensaje de error ya viene del hook 'message', 
+            // pero forzamos un reset del estado de registro si el error es de "ya participó"
+            if (message?.toLowerCase().includes("ya participó") || message?.toLowerCase().includes("registrado")) {
+                setIsRegistered(false); // Obliga a revisar sus datos
+            }
         }
-    };
+    } catch (error) {
+        clearInterval(timer);
+        setShowGif(false);
+        setCountdown(null);
+    }
+};
 
     return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative font-sans">

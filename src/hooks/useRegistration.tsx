@@ -75,7 +75,10 @@ export const useRegistration = (): RouletteHook => {
         }
 
         // Validación específica para DNI peruano
-        if (dni.length !== 9) {
+       const dniLimpio = dni.trim();
+        const dniRegex = /^\d{8,9}$/;
+        
+        if (!dniRegex.test(dniLimpio)) {
             setMessage("⚠️ Formato de DNI inválido");
             return { success: false };
         }
@@ -107,20 +110,23 @@ export const useRegistration = (): RouletteHook => {
                 voucherUrl  
             };
 
-            const res = await fetch(`${API_URL}/api/v1/register-spin-fixed`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            
-            const resJson = await res.json();
+           // Dentro de useRegistration.ts -> handleSpin
+const res = await fetch(`${API_URL}/api/v1/register-spin-fixed`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+});
 
-            if (res.ok) {
-                return { success: true, prizeName: resJson.prize, registerId: resJson.registerId };
-            } else {
-                setMessage(`⚠️ ${resJson.message || "Inconveniente al procesar , refresque la página e intente nuevamente."}`);
-                return { success: false };
-            }
+const resJson = await res.json();
+
+if (res.ok) {
+    return { success: true, prizeName: resJson.prize, registerId: resJson.registerId };
+} else {
+    // Aquí es donde capturamos el "DNI ya registrado" que envía el servidor
+    const errorMsg = resJson.message || "Inconveniente al procesar el registro, dni registrado o refresque la página e intente nuevamente.";
+    setMessage(errorMsg); 
+    return { success: false };
+}
 
         } catch (err: any) {
             setMessage(err.message || " Hubo un inconveniente, refresque la página e intente nuevamente.");
