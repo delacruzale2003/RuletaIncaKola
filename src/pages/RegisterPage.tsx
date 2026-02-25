@@ -202,7 +202,7 @@ const RegisterPage: React.FC = () => {
                     <div className="bg-transparent border-2 border-[#1C3F8C] font-arponaBold rounded-3xl p-4 pt-1 sm:pt-6 w-auto shadow-2xl relative mt-12 sm:mt-0">
                         
                         {/* --- LOGO --- Ajustado para que no se salga de la pantalla en iPhone XR */}
-                        <div className="absolute -top-28 sm:-top-36 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center">
+                        <div className="absolute -top-34 sm:-top-36 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center">
                             <img 
                                 src="/logoik.png" 
                                 alt="Logo IncaKola" 
