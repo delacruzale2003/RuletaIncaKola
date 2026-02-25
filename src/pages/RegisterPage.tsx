@@ -1,14 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"; 
 import { useRegistration } from "../hooks/useRegistration";
 import { MapPin, Check, X } from 'lucide-react';
-// IMPORTANTE: Asegúrate de que la ruta sea correcta según tu estructura de carpetas
 import BackgroundCC from "../components/BackgroundCC";
 
 const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
-    const { storeId: paramStoreId } = useParams<{ storeId: string }>(); 
-    const [searchParams] = useSearchParams();
+
     
     // Estados de UI
     const [showRegisterModal, setShowRegisterModal] = useState(false); 
@@ -22,16 +20,17 @@ const RegisterPage: React.FC = () => {
     // El check ya empieza MARCADO
     const [termsAccepted, setTermsAccepted] = useState(true);
 
-    const activeStoreId = paramStoreId || searchParams.get("store");
+
 
     const { 
         loading, 
         message, 
         handleSpin, 
         storeName,
+        storeId: activeStoreId,
         name, setName,
         phone, setPhone,  
-        dni, setDni,    // <--- AÑADIDO: Traemos el estado del hook
+        dni, setDni,
         voucher, setVoucher 
     } = useRegistration();
 
@@ -43,9 +42,6 @@ const RegisterPage: React.FC = () => {
             alert("Por favor completa todos los campos y acepta los términos.");
             return;
         }
-
-        // 2. Validar longitud de DNI (9 dígitos exactos)
-
 
         // 2. Validar formato de DNI (8 o 9 dígitos numéricos)
         const dniRegex = /^\d{8,9}$/;
@@ -68,64 +64,53 @@ const RegisterPage: React.FC = () => {
     const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const onSpinClick = async () => {
-    // 1. Bloqueo inmediato: Si ya está cargando, o el GIF está activo, o no está registrado, salimos.
-    if (loading || showGif || countdown !== null || !isRegistered || !activeStoreId) {
-        if (!isRegistered && !loading && !showGif) setShowRegisterModal(true);
-        return;
-    }
-
-    // --- MAGIA UX: Iniciamos el GIF y el contador INMEDIATAMENTE ---
-    setShowGif(true);
-    setCountdown(5);
-
-    let currentCount = 5;
-    const timer = setInterval(() => {
-        currentCount -= 1;
-        if (currentCount > 0) {
-            setCountdown(currentCount);
-        } else {
-            setCountdown(0);
+        // Bloqueo inmediato para evitar doble clic
+        if (loading || showGif || countdown !== null || !isRegistered || !activeStoreId) {
+            if (!isRegistered && !loading && !showGif) setShowRegisterModal(true);
+            return;
         }
-    }, 1000);
 
-    try {
-        const result = await handleSpin();
+        setShowGif(true);
+        
+        // --- 1. PRIMERO HACEMOS EL CONTEO VISUAL (5, 4, 3, 2, 1) ---
+        for (let i = 5; i > 0; i--) {
+            setCountdown(i);
+            await wait(1000);
+        }
+        
+        // --- 2. EL CONTEO TERMINÓ, MOSTRAMOS "VERIFICANDO..." ---
+        setCountdown(0); 
 
-        if (result.success && result.prizeName) {
-            // Esperar a que el contador visual termine
-            if (currentCount > 0) {
-                await wait(currentCount * 1000);
-            } else {
+        // --- 3. AHORA ENVIAMOS LA PETICIÓN AL SERVIDOR ---
+        try {
+            const result = await handleSpin(); // Esto activará 'loading' a true en tu hook
+
+            // --- 4. EL SERVIDOR RESPONDIÓ ---
+            if (result.success && result.prizeName) {
+                // Pequeña pausa opcional de 1 seg para que no sea un salto brusco
                 await wait(1000); 
+                navigate('/exit', {
+                    state: { 
+                        prizeName: result.prizeName, 
+                        registerId: result.registerId,
+                        isAnonymous: false,
+                        storeId: activeStoreId 
+                    },
+                });
+            } else {
+                // Manejo de error
+                setShowGif(false);
+                setCountdown(null);
+                
+                if (message?.toLowerCase().includes("ya participó") || message?.toLowerCase().includes("registrado")) {
+                    setIsRegistered(false);
+                }
             }
-            
-            clearInterval(timer);
-            
-            navigate('/exit', {
-                state: { 
-                    prizeName: result.prizeName, 
-                    registerId: result.registerId,
-                    isAnonymous: false,
-                    storeId: activeStoreId 
-                },
-            });
-        } else {
-            // AQUÍ MANEJAMOS EL ERROR (DNI duplicado, sin stock, etc.)
-            clearInterval(timer);
+        } catch (error) {
             setShowGif(false);
             setCountdown(null);
-            // El mensaje de error ya viene del hook 'message', 
-            // pero forzamos un reset del estado de registro si el error es de "ya participó"
-            if (message?.toLowerCase().includes("ya participó") || message?.toLowerCase().includes("registrado")) {
-                setIsRegistered(false); // Obliga a revisar sus datos
-            }
         }
-    } catch (error) {
-        clearInterval(timer);
-        setShowGif(false);
-        setCountdown(null);
-    }
-};
+    };
 
     return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative font-sans">
@@ -160,22 +145,28 @@ const RegisterPage: React.FC = () => {
         <div className="z-20 mt-10 flex flex-col items-center gap-2 relative">
             <div className="flex items-center gap-1">
                 
-<button 
-    onClick={onSpinClick} 
-    // Añadimos 'loading' a las condiciones de disabled
-    disabled={showGif || loading || !isRegistered || countdown !== null}
-    className={`
-        flex items-center px-8 py-2 rounded-full text-black transform transition-all border-2 border-transparent min-w-[200px] justify-center
-        ${(showGif || loading || countdown !== null) 
-            ? 'grayscale opacity-50 cursor-wait scale-95' // Cambio visual claro de "bloqueado"
-            : 'hover:brightness-110 active:scale-95' 
-        }
-    `}
->
-    <span className="text-xl tracking-tight font-arponaBold text-white uppercase border-2 border-transparent px-7 rounded-full py-1 bg-[#1C3F8C] whitespace-nowrap">
-        {loading ? "Verificando..." : (countdown !== null ? (countdown > 0 ? countdown : "Suerte...") : "Juega Aquí")}
-    </span>
-</button>
+                <button 
+                    onClick={onSpinClick} 
+                    // Desactivado si está animando, cargando en el server, contando, o no registrado
+                    disabled={showGif || loading || countdown !== null || !isRegistered}
+                    className={`
+                        flex items-center px-8 py-2 rounded-full text-black transform transition-all border-2 border-transparent min-w-[200px] justify-center
+                        ${(showGif || loading || countdown !== null || !isRegistered) 
+                            ? 'grayscale opacity-50 cursor-not-allowed scale-95' 
+                            : 'hover:brightness-110 active:scale-95' 
+                        }
+                    `}
+                >
+                    <span className="text-xl tracking-tight font-arponaBold text-white uppercase border-2 border-transparent px-7 rounded-full py-1 bg-[#1C3F8C] whitespace-nowrap">
+                        {!isRegistered 
+                            ? "Regístrate" 
+                            : (countdown !== null 
+                                ? (countdown > 0 ? countdown : "Verificando...") 
+                                : "Juega Aquí"
+                              )
+                        }
+                    </span>
+                </button>
             </div>
 
             {activeStoreId && (
@@ -194,9 +185,8 @@ const RegisterPage: React.FC = () => {
             </div>
         )}
         
-        {/* ======================================= */}
-        {/* 2. MODAL DE REGISTRO (FORMULARIO)       */}
-        {/* ======================================= */}
+        
+        
         {showRegisterModal && (
             <div className="fixed inset-0 z-50 p-4 animate-fade-in overflow-y-auto flex items-center justify-center">
                 
@@ -205,22 +195,23 @@ const RegisterPage: React.FC = () => {
                     <BackgroundCC />
                 </div>
                 
-                {/* Contenedor Flex */}
-                <div className="flex flex-col items-center justify-center w-full mt-20 mb-10 relative z-10">
+                {/* Contenedor Flex - Ajustado el margen superior para pantallas pequeñas */}
+                <div className="flex flex-col items-center justify-center w-full mt-28 sm:mt-20 mb-10 relative z-10">
                     
-                    <div className="bg-transparent border-2 border-[#1C3F8C] font-arponaBold rounded-3xl p-4 w-auto shadow-2xl relative">
+                    {/* Caja del formulario */}
+                    <div className="bg-transparent border-2 border-[#1C3F8C] font-arponaBold rounded-3xl p-4 pt-1 sm:pt-6 w-auto shadow-2xl relative mt-12 sm:mt-0">
                         
-                        {/* --- LOGO --- */}
-                        <div className="absolute -top-42 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center">
+                        {/* --- LOGO --- Ajustado para que no se salga de la pantalla en iPhone XR */}
+                        <div className="absolute -top-28 sm:-top-36 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center">
                             <img 
                                 src="/logoik.png" 
                                 alt="Logo IncaKola" 
-                                className="w-34 md:w-31 h-auto" 
+                                className="w-28 sm:w-34 md:w-31 h-auto drop-shadow-md" 
                             />
                         </div>
 
                         {/* Cabecera */}
-                        <div className="text-left mb-2 mt-0">
+                        <div className="text-left mb-2 mt-4 sm:mt-0">
                             <h2 className="text-[29px] text-[#1C3F8C] font-mont-extrabold  mb-0 tracking-tight font-arponaBold">REGÍSTRATE</h2>
                             <p className="text-[#1C3F8C] text-[15px] text-left  mb-3 leading-3 font-arponaBold">Llena tus datos y participa por<br/> fabulosos premios</p>
                         </div>
@@ -240,14 +231,14 @@ const RegisterPage: React.FC = () => {
                                 />
                             </div>
 
-                            {/* Input DNI (VALIDADO Y AÑADIDO) */}
+                            {/* Input DNI */}
                             <div>
                                 <label className="block text-[#1C3F8C] text-[13px] font-bold mb-0 ">DNI</label>
                                 <input 
                                     type="text" 
                                     inputMode="numeric"
                                     value={dni}
-                                    onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))} // Solo números
+                                    onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))} 
                                     maxLength={9}
                                     required
                                     className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2 rounded-full text-[#1C3F8C] text-sm focus:outline-none"
@@ -260,7 +251,7 @@ const RegisterPage: React.FC = () => {
                                 <input 
                                     type="tel" 
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Solo números
+                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} 
                                     maxLength={9}
                                     required
                                     className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2 rounded-full text-[#1C3F8C] text-sm focus:outline-none"
@@ -316,7 +307,7 @@ const RegisterPage: React.FC = () => {
                         type="submit"
                         form="register-form"
                         disabled={!termsAccepted}
-                        className={`w-48 mt-10 py-1 rounded-full text-white bg-[#1C3F8C] font-arponaBold text-2xl shadow-lg border-2 border-[#1C3F8C] transition-all active:scale-95 
+                        className={`w-48 mt-8 py-1 rounded-full text-white bg-[#1C3F8C] font-arponaBold text-2xl shadow-lg border-2 border-[#1C3F8C] transition-all active:scale-95 
                             ${termsAccepted 
                                 ? 'hover:brightness-110 shadow-[0_0_20px_rgba(101,199,195,0.4)]' 
                                 : 'opacity-40 cursor-not-allowed grayscale'
@@ -325,6 +316,16 @@ const RegisterPage: React.FC = () => {
                     >
                         ENVIAR
                     </button>
+
+                    {/* --- INDICADOR DE TIENDA MOVIDO DEBAJO DEL BOTÓN --- */}
+                    {activeStoreId && (
+                        <div className="mt-4 flex items-center justify-center gap-1 text-[#1C3F8C] bg-white/90 px-4 py-1.5 rounded-full shadow-sm max-w-[90%] z-20">
+                            <MapPin size={14} className="min-w-[14px]" />
+                            <span className="text-[11px] sm:text-xs font-bold uppercase text-center leading-tight break-words">
+                                {storeName || `Tienda: ${activeStoreId}`}
+                            </span>
+                        </div>
+                    )}
 
                 </div>
             </div>
