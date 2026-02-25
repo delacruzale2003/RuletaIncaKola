@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom"; 
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; 
 import { useRegistration } from "../hooks/useRegistration";
 import { MapPin, Check, X } from 'lucide-react';
 import BackgroundCC from "../components/BackgroundCC";
@@ -7,27 +7,27 @@ import BackgroundCC from "../components/BackgroundCC";
 const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
 
-    
     // Estados de UI
     const [showRegisterModal, setShowRegisterModal] = useState(false); 
     const [showTermsModal, setShowTermsModal] = useState(true); 
     const [showGif, setShowGif] = useState(false);
     const [isRegistered, setIsRegistered] = useState(false);
+    
+    // NUEVO ESTADO: Bloqueo estricto del botón
+    const [isSpinning, setIsSpinning] = useState(false);
 
-    // NUEVO ESTADO: Contador
+    // Contador
     const [countdown, setCountdown] = useState<number | null>(null);
 
     // El check ya empieza MARCADO
     const [termsAccepted, setTermsAccepted] = useState(true);
-
-
 
     const { 
         loading, 
         message, 
         handleSpin, 
         storeName,
-        storeId: activeStoreId,
+        storeId: activeStoreId, 
         name, setName,
         phone, setPhone,  
         dni, setDni,
@@ -64,12 +64,13 @@ const RegisterPage: React.FC = () => {
     const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const onSpinClick = async () => {
-        // Bloqueo inmediato para evitar doble clic
-        if (loading || showGif || countdown !== null || !isRegistered || !activeStoreId) {
-            if (!isRegistered && !loading && !showGif) setShowRegisterModal(true);
+        // Bloqueo inmediato, estricto y absoluto
+        if (isSpinning || loading || showGif || !isRegistered || !activeStoreId) {
+            if (!isRegistered && !loading && !showGif && !isSpinning) setShowRegisterModal(true);
             return;
         }
 
+        setIsSpinning(true); // Bloqueamos el botón
         setShowGif(true);
         
         // --- 1. PRIMERO HACEMOS EL CONTEO VISUAL (5, 4, 3, 2, 1) ---
@@ -98,9 +99,10 @@ const RegisterPage: React.FC = () => {
                     },
                 });
             } else {
-                // Manejo de error
+                // Manejo de error: devolvemos la interfaz a la normalidad
                 setShowGif(false);
                 setCountdown(null);
+                setIsSpinning(false); // Desbloqueamos el botón
                 
                 if (message?.toLowerCase().includes("ya participó") || message?.toLowerCase().includes("registrado")) {
                     setIsRegistered(false);
@@ -109,6 +111,7 @@ const RegisterPage: React.FC = () => {
         } catch (error) {
             setShowGif(false);
             setCountdown(null);
+            setIsSpinning(false); // Desbloqueamos el botón
         }
     };
 
@@ -147,11 +150,11 @@ const RegisterPage: React.FC = () => {
                 
                 <button 
                     onClick={onSpinClick} 
-                    // Desactivado si está animando, cargando en el server, contando, o no registrado
-                    disabled={showGif || loading || countdown !== null || !isRegistered}
+                    // Desactivado absoluto si isSpinning es true
+                    disabled={isSpinning || loading || !isRegistered}
                     className={`
                         flex items-center px-8 py-2 rounded-full text-black transform transition-all border-2 border-transparent min-w-[200px] justify-center
-                        ${(showGif || loading || countdown !== null || !isRegistered) 
+                        ${(isSpinning || loading || !isRegistered) 
                             ? 'grayscale opacity-50 cursor-not-allowed scale-95' 
                             : 'hover:brightness-110 active:scale-95' 
                         }
@@ -169,6 +172,7 @@ const RegisterPage: React.FC = () => {
                 </button>
             </div>
 
+            {/* AQUÍ SE MUESTRA LA TIENDA DEBAJO DEL BOTÓN DE LA RULETA */}
             {activeStoreId && (
                 <div className="flex items-center gap-1 text-black/80 mt-1 animate-fade-in">
                     <MapPin size={12} className="text-black" />
@@ -185,8 +189,9 @@ const RegisterPage: React.FC = () => {
             </div>
         )}
         
-        
-        
+        {/* ======================================= */}
+        {/* 2. MODAL DE REGISTRO (FORMULARIO)       */}
+        {/* ======================================= */}
         {showRegisterModal && (
             <div className="fixed inset-0 z-50 p-4 animate-fade-in overflow-y-auto flex items-center justify-center">
                 
@@ -196,13 +201,13 @@ const RegisterPage: React.FC = () => {
                 </div>
                 
                 {/* Contenedor Flex - Ajustado el margen superior para pantallas pequeñas */}
-                <div className="flex flex-col items-center justify-center w-full mt-28 sm:mt-20 mb-10 relative z-10">
+                <div className="flex flex-col items-center justify-center w-full mt-24 sm:mt-20 mb-10 relative z-10">
                     
                     {/* Caja del formulario */}
-                    <div className="bg-transparent border-2 border-[#1C3F8C] font-arponaBold rounded-3xl p-4 pt-1 sm:pt-6 w-auto shadow-2xl relative mt-12 sm:mt-0">
+                    <div className="bg-transparent border-2 border-[#1C3F8C] font-arponaBold rounded-3xl p-4 pt-4 sm:pt-6 w-auto shadow-2xl relative mt-12 sm:mt-0">
                         
                         {/* --- LOGO --- Ajustado para que no se salga de la pantalla en iPhone XR */}
-                        <div className="absolute -top-34 sm:-top-36 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center">
+                        <div className="absolute -top-24 sm:-top-32 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center">
                             <img 
                                 src="/logoik.png" 
                                 alt="Logo IncaKola" 
@@ -211,7 +216,7 @@ const RegisterPage: React.FC = () => {
                         </div>
 
                         {/* Cabecera */}
-                        <div className="text-left mb-2 mt-4 sm:mt-0">
+                        <div className="text-left mb-2 mt-2 sm:mt-0">
                             <h2 className="text-[29px] text-[#1C3F8C] font-mont-extrabold  mb-0 tracking-tight font-arponaBold">REGÍSTRATE</h2>
                             <p className="text-[#1C3F8C] text-[15px] text-left  mb-3 leading-3 font-arponaBold">Llena tus datos y participa por<br/> fabulosos premios</p>
                         </div>
@@ -238,7 +243,7 @@ const RegisterPage: React.FC = () => {
                                     type="text" 
                                     inputMode="numeric"
                                     value={dni}
-                                    onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))} 
+                                    onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))} // Solo números
                                     maxLength={9}
                                     required
                                     className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2 rounded-full text-[#1C3F8C] text-sm focus:outline-none"
@@ -251,7 +256,7 @@ const RegisterPage: React.FC = () => {
                                 <input 
                                     type="tel" 
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} 
+                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Solo números
                                     maxLength={9}
                                     required
                                     className="w-76 px-3 py-1 bg-white border border-[#1C3F8C] border-2 rounded-full text-[#1C3F8C] text-sm focus:outline-none"
