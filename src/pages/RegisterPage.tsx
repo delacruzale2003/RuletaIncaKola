@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { useRegistration } from "../hooks/useRegistration";
-import { MapPin, Check, X } from 'lucide-react';
+// Agregados Camera y ImageIcon de lucide-react
+import { MapPin, Check, X, Camera, Image as ImageIcon } from 'lucide-react';
 import BackgroundCC from "../components/BackgroundCC";
 
 const RegisterPage: React.FC = () => {
@@ -263,25 +264,66 @@ const RegisterPage: React.FC = () => {
                                 />
                             </div>
 
-                            {/* Input Foto Voucher */}
+                            {/* --- INICIO NUEVA SECCIÓN DE VOUCHER DIVIDIDA --- */}
                             <div>
-                                <label className="block text-[#1C3F8C] text-[13px] font-bold mb-0 ">Foto de Voucher</label>
-                                <label className="cursor-pointer border-[#1C3F8C] bg-white flex items-center justify-left gap-2 w-76 px-3 py-1 border-2 rounded-full text-[#1C3F8C] text-sm font-arponaBold hover:bg-[#1C3F8C] hover:text-white transition-all shadow-[0_0_10px_rgba(162,231,26,0.3)] active:scale-95">
-                                    
-                                    {voucher ? "ARCHIVO SELECCIONADO" : "SELECCIONAR ARCHIVO"}
-                                    <input 
-                                        type="file" 
-                                        className="hidden" 
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            if (e.target.files && e.target.files[0]) {
-                                                setVoucher(e.target.files[0]);
-                                            }
-                                        }}
-                                        required
-                                    />
-                                </label>
+                                <label className="block text-[#1C3F8C] text-[13px] font-bold mb-0">Foto de Voucher</label>
+                                
+                                {voucher ? (
+                                    /* Estado: Archivo Seleccionado */
+                                    <div className="flex flex-col gap-1 w-76">
+                                        <div className="border-[#1C3F8C] bg-[#1C3F8C] flex items-center justify-between px-3 py-1.5 border-2 rounded-full text-white text-sm font-arponaBold shadow-[0_0_10px_rgba(162,231,26,0.3)]">
+                                            <span className="truncate flex-1">VOUCHER CARGADO</span>
+                                            <Check size={16} strokeWidth={3} className="ml-2" />
+                                        </div>
+                                        <div className="flex justify-end pr-2">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setVoucher(null)}
+                                                className="text-[#1C3F8C] text-[11px] underline font-bold hover:text-black transition-colors"
+                                            >
+                                                Cambiar foto
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* Estado: Botones Divididos (Galería / Cámara) */
+                                    <div className="flex gap-2 w-76">
+                                        {/* Botón Galería */}
+                                        <label className="flex-1 cursor-pointer border-[#1C3F8C] bg-white flex items-center justify-center gap-1.5 px-1 py-1.5 border-2 rounded-full text-[#1C3F8C] text-[11px] font-arponaBold hover:bg-[#1C3F8C] hover:text-white transition-all shadow-[0_0_10px_rgba(162,231,26,0.3)] active:scale-95">
+                                            <ImageIcon size={14} strokeWidth={2.5} />
+                                            <span>GALERÍA</span>
+                                            <input 
+                                                type="file" 
+                                                className="hidden" 
+                                                accept="image/*" 
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files[0]) {
+                                                        setVoucher(e.target.files[0]);
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+
+                                        {/* Botón Cámara */}
+                                        <label className="flex-1 cursor-pointer border-[#1C3F8C] bg-white flex items-center justify-center gap-1.5 px-1 py-1.5 border-2 rounded-full text-[#1C3F8C] text-[11px] font-arponaBold hover:bg-[#1C3F8C] hover:text-white transition-all shadow-[0_0_10px_rgba(162,231,26,0.3)] active:scale-95">
+                                            <Camera size={14} strokeWidth={2.5} />
+                                            <span>CÁMARA</span>
+                                            <input 
+                                                type="file" 
+                                                className="hidden" 
+                                                accept="image/*" 
+                                                capture="environment" 
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files[0]) {
+                                                        setVoucher(e.target.files[0]);
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+                                )}
                             </div>
+                            {/* --- FIN NUEVA SECCIÓN DE VOUCHER DIVIDIDA --- */}
 
                             {/* CHECKBOX TÉRMINOS */}
                             <div className="flex items-start gap-2 mt-4 px-2 max-w-[288px]">
@@ -312,7 +354,7 @@ const RegisterPage: React.FC = () => {
                         type="submit"
                         form="register-form"
                         disabled={!termsAccepted}
-                        className={`w-48 mt-8 py-1 rounded-full text-white bg-[#1C3F8C] font-arponaBold text-2xl shadow-lg border-2 border-[#1C3F8C] transition-all active:scale-95 
+                        className={`w-48 mt-8 py-1 rounded-full text-white bg-[#1C3F8C] font-arponaBold text-2xl shadow-lg border-2 border-[#1C3F8C] transition-all active:scale-95  
                             ${termsAccepted 
                                 ? 'hover:brightness-110 shadow-[0_0_20px_rgba(101,199,195,0.4)]' 
                                 : 'opacity-40 cursor-not-allowed grayscale'

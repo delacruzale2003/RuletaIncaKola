@@ -28,20 +28,34 @@ export const useRegistration = (): RouletteHook => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [storeName, setStoreName] = useState("");
-    const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [dni, setDni] = useState(""); 
+    
+    // --- MAGIA UX: Inicialización segura con sessionStorage ---
+    const [name, setNameState] = useState(() => sessionStorage.getItem('ik_name') || "");
+    const [phone, setPhoneState] = useState(() => sessionStorage.getItem('ik_phone') || "");
+    const [dni, setDniState] = useState(() => sessionStorage.getItem('ik_dni') || ""); 
     const [voucher, setVoucher] = useState<File | null>(null);
 
-    // --- MAGIA UX: Captura de ID a prueba de fallos ---
+    // --- MAGIA UX: Funciones que actualizan el estado y la sesión al mismo tiempo ---
+    const setName = (val: string) => { 
+        setNameState(val); 
+        sessionStorage.setItem('ik_name', val); 
+    };
+    const setPhone = (val: string) => { 
+        setPhoneState(val); 
+        sessionStorage.setItem('ik_phone', val); 
+    };
+    const setDni = (val: string) => { 
+        setDniState(val); 
+        sessionStorage.setItem('ik_dni', val); 
+    };
+
+    // Captura de ID a prueba de fallos
     const params = useParams();
     const [searchParams] = useSearchParams();
     
-    // Obtenemos el último segmento de la URL por si React Router falla
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const fallbackId = pathParts.length > 0 ? pathParts[pathParts.length - 1] : undefined;
 
-    // Evaluamos todas las opciones posibles para atrapar el ID
     const activeStoreId = params.storeId || params.id || searchParams.get("store") || fallbackId;
 
     useEffect(() => {
@@ -54,7 +68,6 @@ export const useRegistration = (): RouletteHook => {
                     const json = await res.json();
                     
                     if (json.success && json.data) {
-                        // Atrapamos el nombre dependiendo de cómo venga estructurado tu JSON
                         const nombreTienda = json.data.name || json.data.store?.name || json.data[0]?.name;
                         if (nombreTienda) {
                             setStoreName(nombreTienda);
@@ -124,6 +137,12 @@ export const useRegistration = (): RouletteHook => {
             const resJson = await res.json();
 
             if (res.ok) {
+                // --- LIMPIEZA DE SESIÓN POR ÉXITO ---
+                // El registro fue exitoso, limpiamos para que el siguiente jugador empiece en blanco
+                sessionStorage.removeItem('ik_name');
+                sessionStorage.removeItem('ik_phone');
+                sessionStorage.removeItem('ik_dni');
+                
                 return { success: true, prizeName: resJson.prize, registerId: resJson.registerId };
             } else {
                 const errorMsg = resJson.message || "Inconveniente al procesar el registro.";
