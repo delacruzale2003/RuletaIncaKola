@@ -95,7 +95,7 @@ export const useRegistration = (): RouletteHook => {
         try {
             const formDataImage = new FormData();
             formDataImage.append("photo", voucher); 
-            const uploadRes = await fetch("https://ptm.pe/PremiosApp/upload_fixed.php", {
+            const uploadRes = await fetch("https://api.ptm.pe/upload_fixed.php", {
                 method: "POST",
                 body: formDataImage,
             });
